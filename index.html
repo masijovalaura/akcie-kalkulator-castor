@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orientační výpočet zdanění</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f6fb; --surface: #ffffff; --surface2: #eef1f8; --border: #dce2f0;
+    --accent-cz: #1E5BA8; --accent-sk: #C0187A; --accent: #1E5BA8;
+    --text: #111827; --text-muted: #4b5a7a; --text-dim: #9aa3ba;
+    --green: #0d7c4e; --red: #c0184a; --radius: 16px; --radius-sm: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Mono', monospace; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: linear-gradient(rgba(30,91,168,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(30,91,168,0.04) 1px, transparent 1px);
+    background-size: 60px 60px; pointer-events: none; z-index: 0;
+  }
+  .orb { position: fixed; border-radius: 50%; filter: blur(140px); pointer-events: none; z-index: 0; opacity: 0.07; }
+  .orb-1 { width: 600px; height: 600px; background: #1E5BA8; top: -150px; right: -150px; }
+  .orb-2 { width: 500px; height: 500px; background: #C0187A; bottom: -150px; left: -150px; }
+  .container { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding: 48px 24px 80px; }
+
+  .disclaimer-top {
+    background: rgba(192,24,122,0.06); border: 1px solid rgba(192,24,122,0.22);
+    border-radius: var(--radius-sm); padding: 14px 20px; font-size: 12px;
+    color: #7a1050; line-height: 1.7; margin-bottom: 36px;
+    display: flex; gap: 10px; align-items: flex-start;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .header { text-align: center; margin-bottom: 40px; animation: fadeUp 0.6s 0.05s ease both; }
+  .header-label {
+    font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 600;
+    letter-spacing: 0.25em; text-transform: uppercase; color: #C0187A;
+    margin-bottom: 16px; display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .header-label::before, .header-label::after { content: ''; height: 1px; width: 40px; background: #C0187A; opacity: 0.4; }
+  h1 { font-family: 'Syne', sans-serif; font-size: clamp(26px,5vw,42px); font-weight: 800; line-height: 1.1; color: var(--text); letter-spacing: -0.02em; }
+  h1 span { color: #1E5BA8; }
+  .header-sub { margin-top: 12px; color: var(--text-muted); font-size: 12px; line-height: 1.7; max-width: 640px; margin-left: auto; margin-right: auto; }
+
+  .controls-row { display: flex; gap: 12px; margin-bottom: 32px; animation: fadeUp 0.6s 0.1s ease both; }
+  .toggle-group { display: flex; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 5px; box-shadow: 0 2px 12px rgba(30,91,168,0.07); }
+  .toggle-group.country { flex: 1; }
+  .toggle-btn {
+    flex: 1; padding: 12px 16px; border: none; border-radius: var(--radius-sm);
+    background: transparent; color: var(--text-muted);
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px;
+    cursor: pointer; transition: all 0.25s; display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .toggle-btn.active { background: var(--surface2); color: var(--text); }
+  .toggle-btn.active.cz { color: var(--accent-cz); box-shadow: inset 0 0 0 1px rgba(30,91,168,0.25), 0 2px 8px rgba(30,91,168,0.1); }
+  .toggle-btn.active.sk { color: var(--accent-sk); box-shadow: inset 0 0 0 1px rgba(192,24,122,0.25), 0 2px 8px rgba(192,24,122,0.1); }
+  .toggle-btn.active.lang { color: var(--accent-cz); box-shadow: inset 0 0 0 1px rgba(30,91,168,0.25), 0 2px 8px rgba(30,91,168,0.1); }
+  .flag { font-size: 18px; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 32px; margin-bottom: 20px; animation: fadeUp 0.6s ease both; box-shadow: 0 2px 16px rgba(30,91,168,0.06); }
+  .card-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 24px; display: flex; align-items: center; gap: 10px; }
+  .card-title .dot { width: 6px; height: 6px; border-radius: 50%; background: #1E5BA8; flex-shrink: 0; }
+
+  .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 600px) { .input-grid { grid-template-columns: 1fr; } .card { padding: 20px; } .controls-row { flex-direction: column; } }
+
+  .field { display: flex; flex-direction: column; gap: 8px; }
+  .field label { font-size: 11px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); }
+  .input-wrap { position: relative; display: flex; align-items: center; }
+  .input-wrap input {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 14px 52px 14px 16px;
+    color: var(--text); font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 500;
+    transition: border-color 0.2s, box-shadow 0.2s; -moz-appearance: textfield;
+  }
+  .input-wrap input::-webkit-outer-spin-button, .input-wrap input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .input-wrap input:focus { outline: none; border-color: var(--accent-cz); box-shadow: 0 0 0 3px rgba(30,91,168,0.12); }
+  .input-unit { position: absolute; right: 14px; font-size: 12px; color: var(--text-dim); font-weight: 500; pointer-events: none; }
+
+  .calc-btn {
+    width: 100%; padding: 18px; border: none; border-radius: var(--radius);
+    background: var(--accent); color: #fff; font-family: 'Syne', sans-serif;
+    font-weight: 800; font-size: 16px; letter-spacing: 0.05em; cursor: pointer;
+    transition: all 0.2s; margin-top: 8px; position: relative; overflow: hidden;
+  }
+  .calc-btn::after { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%); }
+  .calc-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(30,91,168,0.3); }
+  .calc-btn.sk:hover { box-shadow: 0 12px 40px rgba(192,24,122,0.3); }
+  .calc-btn.sk { background: var(--accent-sk); }
+
+  #results { display: none; animation: fadeUp 0.5s ease both; }
+  #results.visible { display: block; }
+
+  /* 2-col stats */
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  @media (max-width: 600px) { .stats-grid { grid-template-columns: 1fr; } }
+
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 20px; text-align: center;
+    transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 1px 8px rgba(30,91,168,0.05);
+  }
+  .stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(30,91,168,0.1); }
+  .stat-label { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; }
+  .stat-value { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
+  .stat-value.green { color: var(--green); }
+  .stat-value.blue { color: #1E5BA8; }
+  .stat-value.red { color: var(--red); }
+  .stat-sub { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+
+  /* Total impact box */
+  .impact-box {
+    background: linear-gradient(135deg, rgba(192,24,122,0.07), rgba(192,24,122,0.03));
+    border: 1px solid rgba(192,24,122,0.2); border-radius: var(--radius);
+    padding: 28px 32px; display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 20px; flex-wrap: wrap; gap: 16px;
+    box-shadow: 0 2px 12px rgba(192,24,122,0.07);
+  }
+  .impact-label { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--red); }
+  .impact-value { font-family: 'Syne', sans-serif; font-size: 36px; font-weight: 800; color: var(--red); letter-spacing: -0.03em; }
+  .impact-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+  /* Breakdown row under impact box */
+  .impact-breakdown { display: flex; gap: 12px; margin-bottom: 20px; }
+  .impact-item {
+    flex: 1; background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 16px 18px;
+    box-shadow: 0 1px 6px rgba(30,91,168,0.05);
+  }
+  .impact-item-label { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
+  .impact-item-value { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; color: var(--red); }
+  @media (max-width: 600px) { .impact-breakdown { flex-direction: column; } }
+
+  .detail-toggle {
+    display: flex; align-items: center; gap: 10px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-muted);
+    font-family: 'DM Mono', monospace; font-size: 12px; cursor: pointer;
+    padding: 10px 16px; width: 100%; margin-bottom: 16px; transition: all 0.2s; justify-content: center;
+    box-shadow: 0 1px 4px rgba(30,91,168,0.05);
+  }
+  .detail-toggle:hover { border-color: var(--accent-cz); color: var(--accent-cz); }
+  .toggle-arrow { transition: transform 0.3s; display: inline-block; }
+  .toggle-arrow.open { transform: rotate(180deg); }
+
+  .detail-table { display: none; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(30,91,168,0.06); }
+  .detail-table.open { display: block; }
+  .detail-section-title { font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-muted); padding: 16px 20px 10px; border-bottom: 1px solid var(--border); background: var(--surface2); }
+  .detail-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-bottom: 1px solid rgba(0,0,0,0.04); font-size: 13px; transition: background 0.15s; }
+  .detail-row:hover { background: rgba(30,91,168,0.03); }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-row-label { color: var(--text-muted); }
+  .detail-row-value { color: var(--text); font-weight: 500; }
+  .detail-row.highlight { background: rgba(13,124,78,0.06); }
+  .detail-row.highlight .detail-row-label { color: var(--green); }
+  .detail-row.highlight .detail-row-value { color: var(--green); font-weight: 700; }
+  .detail-row.subtotal { background: rgba(30,91,168,0.05); }
+  .detail-row.subtotal .detail-row-label { color: var(--accent-cz); font-weight: 600; }
+  .detail-row.subtotal .detail-row-value { color: var(--accent-cz); font-weight: 700; }
+  .detail-row.tax-final { background: rgba(192,24,122,0.06); }
+  .detail-row.tax-final .detail-row-label { color: var(--red); font-weight: 600; }
+  .detail-row.tax-final .detail-row-value { color: var(--red); font-weight: 700; }
+
+  .error-msg { color: var(--red); font-size: 11px; margin-top: 4px; display: none; }
+  .error-msg.visible { display: block; }
+  .input-wrap input.error { border-color: var(--red); }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="container">
+
+  <div class="disclaimer-top">
+    <span>⚠️</span>
+    <span id="txt-disclaimer"></span>
+  </div>
+
+  <div class="header">
+    <div class="header-label" id="txt-label"></div>
+    <h1 id="txt-h1"></h1>
+    <p class="header-sub" id="txt-sub"></p>
+  </div>
+
+  <div class="controls-row">
+    <div class="toggle-group">
+      <button class="toggle-btn active lang" id="btn-cs" onclick="setLang('cs')">🇨🇿 CZ</button>
+      <button class="toggle-btn lang" id="btn-en" onclick="setLang('en')">🇬🇧 EN</button>
+    </div>
+    <div class="toggle-group country">
+      <button class="toggle-btn active cz" id="btn-cz" onclick="setCountry('cz')">
+        <span class="flag">🇨🇿</span> <span id="txt-country-cz"></span>
+      </button>
+      <button class="toggle-btn sk" id="btn-sk" onclick="setCountry('sk')">
+        <span class="flag">🇸🇰</span> <span id="txt-country-sk"></span>
+      </button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span> <span id="txt-inputs-title"></span></div>
+    <div class="input-grid">
+      <div class="field">
+        <label id="lbl-pocet"></label>
+        <div class="input-wrap">
+          <input type="number" id="pocet-akcii" placeholder="25" min="1" max="9999">
+          <span class="input-unit" id="unit-pocet">ks</span>
+        </div>
+        <span class="error-msg" id="err-akcii"></span>
+      </div>
+      <div class="field">
+        <label id="lbl-cena"></label>
+        <div class="input-wrap">
+          <input type="number" id="cena-akcie" placeholder="120" min="0" step="0.01">
+          <span class="input-unit" id="unit-cena">CZK</span>
+        </div>
+        <span class="error-msg" id="err-cena"></span>
+      </div>
+    </div>
+    <button class="calc-btn" id="calc-btn" onclick="calculate()" style="margin-top:24px;"></button>
+  </div>
+
+  <div id="results">
+    <!-- 2 stat cards -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label" id="res-lbl-bonus"></div>
+        <div class="stat-value green" id="res-bonus"></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label" id="res-lbl-hodnota"></div>
+        <div class="stat-value blue" id="res-hodnota-bonus"></div>
+      </div>
+    </div>
+
+    <!-- Total impact -->
+    <div class="impact-box">
+      <div>
+        <div class="impact-label" id="res-impact-label"></div>
+        <div class="impact-sub" id="res-impact-sub"></div>
+      </div>
+      <div style="text-align:right;">
+        <div class="impact-value" id="res-total"></div>
+      </div>
+    </div>
+
+    <!-- Dan + Odvody breakdown -->
+    <div class="impact-breakdown">
+      <div class="impact-item">
+        <div class="impact-item-label" id="res-lbl-dan"></div>
+        <div class="impact-item-value" id="res-dan"></div>
+      </div>
+      <div class="impact-item">
+        <div class="impact-item-label" id="res-lbl-odvody"></div>
+        <div class="impact-item-value" id="res-odvody"></div>
+      </div>
+    </div>
+
+    <button class="detail-toggle" onclick="toggleDetail()">
+      <span id="toggle-label"></span>
+      <span class="toggle-arrow" id="toggle-arrow">▼</span>
+    </button>
+    <div class="detail-table" id="detail-table">
+      <div id="detail-content"></div>
+    </div>
+  </div>
+
+</div>
+<script>
+let country = 'cz', lang = 'cs', detailOpen = false;
+
+const T = {
+  cs: {
+    disclaimer: '<strong>Upozornění:</strong> Tento výpočet je pouze orientační a slouží pro informativní účely. Přesné informace o daňové povinnosti obdržíte během zúčtování červencové mzdy.',
+    label: 'Uvolnění bonusových akcií Castor 2023',
+    h1: 'Orientační <span>výpočet</span> zdanění',
+    sub: 'Předběžný propočet daňové povinnosti z nepeněžního příjmu ve formě bonusových zaměstnaneckých akcií z úpisu roku 2023',
+    countryCz: 'Česká republika', countrySk: 'Slovenská republika',
+    inputsTitle: 'Vstupní údaje',
+    lblPocet: 'Počet nakoupených akcií (2023)', lblCena: 'Aktuální cena akcie',
+    unitPocet: 'ks', errAkcii: 'Prosím zadejte počet akcií (min. 1)', errCena: 'Prosím zadejte platnou cenu akcie',
+    calcBtn: 'Vypočítat daňovou povinnost',
+    resLblBonus: 'Počet bonusových akcií', resLblHodnota: 'Hodnota bonusových akcií',
+    resImpactLabel: 'Celkový dopad na čistou mzdu', resImpactSub: 'Dopad na čistou mzdu v červenci 2026',
+    resLblDan: 'Daň z příjmu', resLblOdvody: 'Odvody (pojistné)',
+    toggleShow: 'Zobrazit detailní rozpis výpočtu', toggleHide: 'Skrýt detailní rozpis',
+    detSecBonus: '📦 Výpočet bonusových akcií',
+    detSecDan: '📊 Daň z příjmu z nepeněžního benefitu',
+    detSecOdvody: '🏦 Odvody zaměstnance z nepeněžního benefitu',
+    detPasmo1: (n,b) => `Pásmo 1–10 ks: ${n} ks × 2 = ${b} ks`,
+    detPasmo2: (n,b) => `Pásmo 11–40 ks: ${n} ks × 1 = ${b} ks`,
+    detPasmo3: (n,b) => `Pásmo 41–100 ks: ${n} ks ÷ 2 = ${b} ks`,
+    detMezisouc: 'Mezisoučet bonusu', detBonusMax: 'Bonusové akcie (max 80)',
+    detCena: 'Cena akcie', detHodnotaBonus: 'Hodnota bonusových akcií',
+    detHodnotaNak: (n) => `Hodnota nakoupených akcií (${n} ks)`,
+    detNeprijem: 'Nepeněžní příjem (hodnota bonusu)',
+    detZakladCZ: 'Nárůst superhrubého základu daně (×1,338)',
+    detDan15: 'Daň 15 % z nárůstu',
+    detDan23: 'Progresivní přirážka 23 % (nad 131 901 Kč/měs)',
+    detDanCelkem: 'Daň z příjmu celkem',
+    detOdvody11: 'Odvody zaměstnance 11 % (ZP 4,5 % + SP 6,5 %)',
+    detOdvodyCelkem: 'Odvody celkem',
+    detTotal: 'Celkový dopad na čistou mzdu',
+    detDanSK19: 'Daň 19 % ze základu do hranice',
+    detDanSK25: 'Daň 25 % ze základu nad hranicí',
+    detDanSKCelkem: 'Daň z příjmu celkem',
+    detOdvodySK: 'Odvody zaměstnance 13,4 % (ZP 4 % + SP 9,4 %)',
+  },
+  en: {
+    disclaimer: '<strong>Notice:</strong> This calculation is for informational purposes only. Exact tax liability details will be provided during the July payroll settlement.',
+    label: 'Castor 2023 Bonus Share Release',
+    h1: 'Indicative <span>tax</span> calculation',
+    sub: 'Preliminary calculation of tax liability from non-monetary income in the form of bonus employee shares from the 2023 subscription.',
+    countryCz: 'Czech Republic', countrySk: 'Slovak Republic',
+    inputsTitle: 'Input data',
+    lblPocet: 'Number of purchased shares (2023)', lblCena: 'Current share price',
+    unitPocet: 'pcs', errAkcii: 'Please enter number of shares (min. 1)', errCena: 'Please enter a valid share price',
+    calcBtn: 'Calculate tax liability',
+    resLblBonus: 'Number of bonus shares', resLblHodnota: 'Value of bonus shares',
+    resImpactLabel: 'Total impact on net salary', resImpactSub: 'Impact on net salary in July 2026',
+    resLblDan: 'Income tax', resLblOdvody: 'Social & health contributions',
+    toggleShow: 'Show detailed calculation', toggleHide: 'Hide detailed calculation',
+    detSecBonus: '📦 Bonus share calculation',
+    detSecDan: '📊 Income tax on non-monetary benefit',
+    detSecOdvody: '🏦 Employee contributions on non-monetary benefit',
+    detPasmo1: (n,b) => `Tier 1–10 pcs: ${n} pcs × 2 = ${b} pcs`,
+    detPasmo2: (n,b) => `Tier 11–40 pcs: ${n} pcs × 1 = ${b} pcs`,
+    detPasmo3: (n,b) => `Tier 41–100 pcs: ${n} pcs ÷ 2 = ${b} pcs`,
+    detMezisouc: 'Bonus subtotal', detBonusMax: 'Bonus shares (max 80)',
+    detCena: 'Share price', detHodnotaBonus: 'Value of bonus shares',
+    detHodnotaNak: (n) => `Value of purchased shares (${n} pcs)`,
+    detNeprijem: 'Non-monetary income (bonus value)',
+    detZakladCZ: 'Super-gross tax base increase (×1.338)',
+    detDan15: 'Tax at 15% on increase',
+    detDan23: 'Progressive surcharge 23% (above CZK 131,901/month)',
+    detDanCelkem: 'Income tax total',
+    detOdvody11: 'Employee contributions 11% (health 4.5% + social 6.5%)',
+    detOdvodyCelkem: 'Contributions total',
+    detTotal: 'Total impact on net salary',
+    detDanSK19: 'Tax at 19% on base up to threshold',
+    detDanSK25: 'Tax at 25% on base above threshold',
+    detDanSKCelkem: 'Income tax total',
+    detOdvodySK: 'Employee contributions 13.4% (health 4% + social 9.4%)',
+  }
+};
+
+function t(key, ...args) {
+  const v = T[lang][key];
+  return typeof v === 'function' ? v(...args) : (v || '');
+}
+
+function setLang(l) {
+  lang = l;
+  document.getElementById('btn-cs').className = 'toggle-btn' + (l==='cs' ? ' active lang' : ' lang');
+  document.getElementById('btn-en').className = 'toggle-btn' + (l==='en' ? ' active lang' : ' lang');
+  applyTexts();
+  document.getElementById('results').className = '';
+}
+
+function setCountry(c) {
+  country = c;
+  document.getElementById('btn-cz').className = 'toggle-btn' + (c==='cz' ? ' active cz' : '');
+  document.getElementById('btn-sk').className = 'toggle-btn' + (c==='sk' ? ' active sk' : '');
+  document.documentElement.style.setProperty('--accent', c==='cz' ? '#1E5BA8' : '#C0187A');
+  document.getElementById('calc-btn').className = 'calc-btn' + (c==='sk' ? ' sk' : '');
+  document.getElementById('unit-cena').textContent = c==='cz' ? 'CZK' : 'EUR';
+  document.getElementById('results').className = '';
+}
+
+function applyTexts() {
+  document.getElementById('txt-disclaimer').innerHTML = t('disclaimer');
+  document.getElementById('txt-label').textContent = t('label');
+  document.getElementById('txt-h1').innerHTML = t('h1');
+  document.getElementById('txt-sub').textContent = t('sub');
+  document.getElementById('txt-country-cz').textContent = t('countryCz');
+  document.getElementById('txt-country-sk').textContent = t('countrySk');
+  document.getElementById('txt-inputs-title').textContent = t('inputsTitle');
+  document.getElementById('lbl-pocet').textContent = t('lblPocet');
+  document.getElementById('lbl-cena').textContent = t('lblCena');
+  document.getElementById('unit-pocet').textContent = t('unitPocet');
+  document.getElementById('err-akcii').textContent = t('errAkcii');
+  document.getElementById('err-cena').textContent = t('errCena');
+  document.getElementById('calc-btn').textContent = t('calcBtn');
+}
+
+function fmt(val, c) {
+  const currency = c==='cz' ? 'CZK' : 'EUR';
+  const locale = lang==='en' ? 'en-GB' : (c==='cz' ? 'cs-CZ' : 'sk-SK');
+  return new Intl.NumberFormat(locale, { style:'currency', currency, minimumFractionDigits:0, maximumFractionDigits:0 }).format(val);
+}
+
+function computeBonus(n) {
+  const t1=Math.min(n,10), t2=Math.max(0,Math.min(n,40)-10), t3=Math.max(0,Math.min(n,100)-40);
+  return Math.min(t1*2 + t2*1 + Math.floor(t3/2), 80);
+}
+
+// CZ: Tax on non-monetary income
+// Super-gross = hodnotaBonus * 1.338, rounded up to 100
+// Progressive: 15% up to 131 901 CZK/month super-gross, 23% above
+// Contributions: 11% of gross bonus value (health 4.5% + social 6.5%)
+function calcCZ(hodnotaBonus) {
+  const superHruba = Math.ceil(hodnotaBonus * 1.338 / 100) * 100;
+  const hraniceMes = 131901; // CZK monthly threshold for 23% (4× average wage 2023)
+  let dan = 0;
+  if (superHruba <= hraniceMes) {
+    dan = Math.round(superHruba * 0.15);
+  } else {
+    dan = Math.round(hraniceMes * 0.15 + (superHruba - hraniceMes) * 0.23);
+  }
+  const dan15 = Math.round(Math.min(superHruba, hraniceMes) * 0.15);
+  const dan23 = superHruba > hraniceMes ? Math.round((superHruba - hraniceMes) * 0.23) : 0;
+  const odvody = Math.round(hodnotaBonus * 0.11);
+  return { superHruba, dan15, dan23, dan, odvody, hraniceMes };
+}
+
+// SK: Tax on non-monetary income
+// Základ = hodnotaBonus (nepeňažný príjem sa pripočítava k základu)
+// Progressive: 19% up to 3 212.75 EUR/month, 25% above
+// Contributions: 13.4% (health 4% + social 9.4%)
+function calcSK(hodnotaBonus) {
+  const hranica = 3212.75;
+  let dan19 = 0, dan25 = 0;
+  if (hodnotaBonus <= hranica) {
+    dan19 = Math.round(hodnotaBonus * 0.19);
+  } else {
+    dan19 = Math.round(hranica * 0.19);
+    dan25 = Math.round((hodnotaBonus - hranica) * 0.25);
+  }
+  const dan = dan19 + dan25;
+  const odvody = Math.round(hodnotaBonus * 0.134);
+  return { dan19, dan25, dan, odvody, hranica };
+}
+
+function validate() {
+  let ok = true;
+  const pocet = parseInt(document.getElementById('pocet-akcii').value);
+  const cena = parseFloat(document.getElementById('cena-akcie').value);
+  const eA = document.getElementById('err-akcii'), eC = document.getElementById('err-cena');
+  const iA = document.getElementById('pocet-akcii'), iC = document.getElementById('cena-akcie');
+  if (!pocet || pocet < 1) { eA.className='error-msg visible'; iA.classList.add('error'); ok=false; }
+  else { eA.className='error-msg'; iA.classList.remove('error'); }
+  if (!cena || cena <= 0) { eC.className='error-msg visible'; iC.classList.add('error'); ok=false; }
+  else { eC.className='error-msg'; iC.classList.remove('error'); }
+  return ok;
+}
+
+function row(label, value, cls='') {
+  return `<div class="detail-row ${cls}"><span class="detail-row-label">${label}</span><span class="detail-row-value">${value}</span></div>`;
+}
+
+function calculate() {
+  if (!validate()) return;
+  const pocet = parseInt(document.getElementById('pocet-akcii').value);
+  const cena = parseFloat(document.getElementById('cena-akcie').value);
+  const c = country;
+
+  const bonus = computeBonus(pocet);
+  const hodnotaBonus = bonus * cena;
+  const hodnotaCelkem = (pocet + bonus) * cena;
+  const f = v => fmt(Math.round(v), c);
+
+  let dan, odvody, superHruba, dan15, dan23, dan19, dan25, hranice;
+
+  if (c === 'cz') {
+    ({ superHruba, dan15, dan23, dan, odvody, hraniceMes: hranice } = calcCZ(hodnotaBonus));
+  } else {
+    ({ dan19, dan25, dan, odvody, hranica: hranice } = calcSK(hodnotaBonus));
+  }
+
+  const total = dan + odvody;
+
+  // Stats
+  document.getElementById('res-lbl-bonus').textContent = t('resLblBonus');
+  document.getElementById('res-bonus').textContent = bonus + ' ' + t('unitPocet');
+  document.getElementById('res-lbl-hodnota').textContent = t('resLblHodnota');
+  document.getElementById('res-hodnota-bonus').textContent = f(hodnotaBonus);
+  document.getElementById('res-impact-label').textContent = t('resImpactLabel');
+  document.getElementById('res-impact-sub').textContent = t('resImpactSub');
+  document.getElementById('res-total').textContent = f(total);
+  document.getElementById('res-lbl-dan').textContent = t('resLblDan');
+  document.getElementById('res-dan').textContent = f(dan);
+  document.getElementById('res-lbl-odvody').textContent = t('resLblOdvody');
+  document.getElementById('res-odvody').textContent = f(odvody);
+
+  // Bonus rows
+  const tier1=Math.min(pocet,10), tier2=Math.max(0,Math.min(pocet,40)-10), tier3=Math.max(0,Math.min(pocet,100)-40);
+  const b1=tier1*2, b2=tier2*1, b3=Math.floor(tier3/2);
+  let bonusRows = '';
+  if (tier1>0) bonusRows += row(t('detPasmo1',tier1,b1), b1+' '+t('unitPocet'));
+  if (tier2>0) bonusRows += row(t('detPasmo2',tier2,b2), b2+' '+t('unitPocet'));
+  if (tier3>0) bonusRows += row(t('detPasmo3',tier3,b3), b3+' '+t('unitPocet'));
+
+  let danSection = '', odvodySection = '';
+
+  if (c === 'cz') {
+    danSection = `
+      ${row(t('detNeprijem'), f(hodnotaBonus))}
+      ${row(t('detZakladCZ'), f(superHruba))}
+      ${row(t('detDan15'), f(dan15))}
+      ${dan23 > 0 ? row(t('detDan23'), f(dan23)) : ''}
+      <div class="detail-row subtotal"><span class="detail-row-label">${t('detDanCelkem')}</span><span class="detail-row-value">${f(dan)}</span></div>
+    `;
+    odvodySection = `
+      ${row(t('detNeprijem'), f(hodnotaBonus))}
+      ${row(t('detOdvody11'), f(odvody))}
+      <div class="detail-row subtotal"><span class="detail-row-label">${t('detOdvodyCelkem')}</span><span class="detail-row-value">${f(odvody)}</span></div>
+    `;
+  } else {
+    danSection = `
+      ${row(t('detNeprijem'), f(hodnotaBonus))}
+      ${row(t('detDanSK19'), f(dan19))}
+      ${dan25 > 0 ? row(t('detDanSK25'), f(dan25)) : ''}
+      <div class="detail-row subtotal"><span class="detail-row-label">${t('detDanSKCelkem')}</span><span class="detail-row-value">${f(dan)}</span></div>
+    `;
+    odvodySection = `
+      ${row(t('detNeprijem'), f(hodnotaBonus))}
+      ${row(t('detOdvodySK'), f(odvody))}
+      <div class="detail-row subtotal"><span class="detail-row-label">${t('detOdvodyCelkem')}</span><span class="detail-row-value">${f(odvody)}</span></div>
+    `;
+  }
+
+  document.getElementById('detail-content').innerHTML = `
+    <div class="detail-section-title">${t('detSecBonus')}</div>
+    ${bonusRows}
+    ${row(t('detMezisouc'), (b1+b2+b3)+' '+t('unitPocet'))}
+    <div class="detail-row highlight"><span class="detail-row-label">${t('detBonusMax')}</span><span class="detail-row-value">${bonus} ${t('unitPocet')}</span></div>
+    ${row(t('detCena'), f(cena))}
+    ${row(t('detHodnotaBonus'), f(hodnotaBonus))}
+    ${row(t('detHodnotaNak', pocet), f(pocet*cena))}
+    <div class="detail-section-title">${t('detSecDan')}</div>
+    ${danSection}
+    <div class="detail-section-title">${t('detSecOdvody')}</div>
+    ${odvodySection}
+    <div class="detail-row tax-final"><span class="detail-row-label">${t('detTotal')}</span><span class="detail-row-value">${f(total)}</span></div>
+  `;
+
+  document.getElementById('toggle-label').textContent = t('toggleShow');
+  const results = document.getElementById('results');
+  results.className = 'visible';
+  detailOpen = false;
+  document.getElementById('detail-table').className = 'detail-table';
+  document.getElementById('toggle-arrow').className = 'toggle-arrow';
+  results.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+function toggleDetail() {
+  detailOpen = !detailOpen;
+  document.getElementById('detail-table').className = 'detail-table' + (detailOpen ? ' open' : '');
+  document.getElementById('toggle-arrow').className = 'toggle-arrow' + (detailOpen ? ' open' : '');
+  document.getElementById('toggle-label').textContent = detailOpen ? t('toggleHide') : t('toggleShow');
+}
+
+document.addEventListener('keydown', e => { if (e.key==='Enter') calculate(); });
+applyTexts();
+</script>
+</body>
+</html>
