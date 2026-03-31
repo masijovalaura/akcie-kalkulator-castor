@@ -273,7 +273,7 @@ let country = 'cz', lang = 'cs', detailOpen = false;
 
 const T = {
   cs: {
-    disclaimer: '<strong>Upozornění:</strong> Tento výpočet je pouze orientační a slouží pro informativní účely. Přesné informace o daňové povinnosti obdržíte během zúčtování červencové mzdy.',
+    disclaimer: 'Tento výpočet je pouze orientační a slouží pro informativní účely. Přesné informace o daňové povinnosti jsou závislé na vašich konkrétních podmínkách. Přesné informace o výši daně obdržíte během zúčtování červencové mzdy.',
     label: 'Uvolnění bonusových akcií Castor 2023',
     h1: 'Orientační <span>výpočet</span> zdanění',
     sub: 'Předběžný propočet daňové povinnosti z nepeněžního příjmu ve formě bonusových zaměstnaneckých akcií z úpisu roku 2023',
@@ -283,7 +283,7 @@ const T = {
     unitPocet: 'ks', errAkcii: 'Prosím zadejte počet akcií (min. 1)', errCena: 'Prosím zadejte platnou cenu akcie',
     calcBtn: 'Vypočítat daňovou povinnost',
     resLblBonus: 'Počet bonusových akcií', resLblHodnota: 'Hodnota bonusových akcií',
-    resImpactLabel: 'Celkový dopad na čistou mzdu', resImpactSub: 'Dopad na čistou mzdu v červenci 2026',
+    resImpactLabel: 'Celkový dopad na mzdu', resImpactSub: 'Celkový dopad na mzdu v červenci 2026',
     resLblDan: 'Daň z příjmu', resLblOdvody: 'Odvody (pojistné)',
     toggleShow: 'Zobrazit detailní rozpis výpočtu', toggleHide: 'Skrýt detailní rozpis',
     detSecBonus: '📦 Výpočet bonusových akcií',
@@ -296,11 +296,11 @@ const T = {
     detCena: 'Cena akcie', detHodnotaBonus: 'Hodnota bonusových akcií',
     detHodnotaNak: (n) => `Hodnota nakoupených akcií (${n} ks)`,
     detNeprijem: 'Nepeněžní příjem (hodnota bonusu)',
-    detZakladCZ: 'Nárůst superhrubého základu daně (×1,338)',
-    detDan15: 'Daň 15 % z nárůstu',
-    detDan23: 'Progresivní přirážka 23 % (nad 131 901 Kč/měs)',
+    detZakladCZ: 'Základ daně (hodnota bonusu = hrubý příjem)',
+    detDan15: 'Daň 15 % (do 146 901 Kč/měs)',
+    detDan23: 'Daň 23 % (nad 146 901 Kč/měs — progresivní pásmo)',
     detDanCelkem: 'Daň z příjmu celkem',
-    detOdvody11: 'Odvody zaměstnance 11 % (ZP 4,5 % + SP 6,5 %)',
+    detOdvody11: 'Odvody zaměstnance 11,6 % (SP 7,1 % + ZP 4,5 %)',
     detOdvodyCelkem: 'Odvody celkem',
     detTotal: 'Celkový dopad na čistou mzdu',
     detDanSK19: 'Daň 19 % ze základu do hranice',
@@ -309,7 +309,7 @@ const T = {
     detOdvodySK: 'Odvody zaměstnance 13,4 % (ZP 4 % + SP 9,4 %)',
   },
   en: {
-    disclaimer: '<strong>Notice:</strong> This calculation is for informational purposes only. Exact tax liability details will be provided during the July payroll settlement.',
+    disclaimer: 'This calculation is for informational purposes only. The exact tax liability depends on your specific conditions. Exact information about the amount of tax will be provided during the July payroll settlement.',
     label: 'Castor 2023 Bonus Share Release',
     h1: 'Indicative <span>tax</span> calculation',
     sub: 'Preliminary calculation of tax liability from non-monetary income in the form of bonus employee shares from the 2023 subscription.',
@@ -319,7 +319,7 @@ const T = {
     unitPocet: 'pcs', errAkcii: 'Please enter number of shares (min. 1)', errCena: 'Please enter a valid share price',
     calcBtn: 'Calculate tax liability',
     resLblBonus: 'Number of bonus shares', resLblHodnota: 'Value of bonus shares',
-    resImpactLabel: 'Total impact on net salary', resImpactSub: 'Impact on net salary in July 2026',
+    resImpactLabel: 'Total impact on salary', resImpactSub: 'Total impact on salary in July 2026',
     resLblDan: 'Income tax', resLblOdvody: 'Social & health contributions',
     toggleShow: 'Show detailed calculation', toggleHide: 'Hide detailed calculation',
     detSecBonus: '📦 Bonus share calculation',
@@ -332,17 +332,53 @@ const T = {
     detCena: 'Share price', detHodnotaBonus: 'Value of bonus shares',
     detHodnotaNak: (n) => `Value of purchased shares (${n} pcs)`,
     detNeprijem: 'Non-monetary income (bonus value)',
-    detZakladCZ: 'Super-gross tax base increase (×1.338)',
-    detDan15: 'Tax at 15% on increase',
-    detDan23: 'Progressive surcharge 23% (above CZK 131,901/month)',
+    detZakladCZ: 'Tax base (bonus value = gross income)',
+    detDan15: 'Tax at 15% (up to CZK 146,901/month)',
+    detDan23: 'Tax at 23% (above CZK 146,901/month — progressive bracket)',
     detDanCelkem: 'Income tax total',
-    detOdvody11: 'Employee contributions 11% (health 4.5% + social 6.5%)',
+    detOdvody11: 'Employee contributions 11.6% (social 7.1% + health 4.5%)',
     detOdvodyCelkem: 'Contributions total',
-    detTotal: 'Total impact on net salary',
-    detDanSK19: 'Tax at 19% on base up to threshold',
-    detDanSK25: 'Tax at 25% on base above threshold',
+    detTotal: 'Total impact on salary',
+    detDanSK19: 'Tax at 19%',
+    detDanSK25: '',
     detDanSKCelkem: 'Income tax total',
-    detOdvodySK: 'Employee contributions 13.4% (health 4% + social 9.4%)',
+    detOdvodySK: 'Employee contributions 14.4% (health 5% + social 9.4%)',
+  },
+  sk: {
+    disclaimer: 'Tento výpočet je len orientačný a slúži na informačné účely. Presné informácie o daňovej povinnosti závisia od vašich konkrétnych podmienok. Presné informácie o výške dane dostanete počas zúčtovania júlovej mzdy.',
+    label: 'Uvoľnenie bonusových akcií Castor 2023',
+    h1: 'Orientačný <span>výpočet</span> zdanenia',
+    sub: 'Predbežný prepočet daňovej povinnosti z nepeňažného príjmu vo forme bonusových zamestnaneckých akcií z úpisu roku 2023',
+    countryCz: 'Česká republika', countrySk: 'Slovenská republika',
+    inputsTitle: 'Vstupné údaje',
+    lblPocet: 'Počet nakúpených akcií (2023)', lblCena: 'Aktuálna cena akcie',
+    unitPocet: 'ks', errAkcii: 'Prosím zadajte počet akcií (min. 1)', errCena: 'Prosím zadajte platnú cenu akcie',
+    calcBtn: 'Vypočítať daňovú povinnosť',
+    resLblBonus: 'Počet bonusových akcií', resLblHodnota: 'Hodnota bonusových akcií',
+    resImpactLabel: 'Celkový dopad na mzdu', resImpactSub: 'Celkový dopad na mzdu v júli 2026',
+    resLblDan: 'Daň z príjmu', resLblOdvody: 'Odvody (poistné)',
+    toggleShow: 'Zobraziť detailný rozpis výpočtu', toggleHide: 'Skryť detailný rozpis',
+    detSecBonus: '📦 Výpočet bonusových akcií',
+    detSecDan: '📊 Daň z príjmu z nepeňažného benefitu',
+    detSecOdvody: '🏦 Odvody zamestnanca z nepeňažného benefitu',
+    detPasmo1: (n,b) => `Pásmo 1–10 ks: ${n} ks × 2 = ${b} ks`,
+    detPasmo2: (n,b) => `Pásmo 11–40 ks: ${n} ks × 1 = ${b} ks`,
+    detPasmo3: (n,b) => `Pásmo 41–100 ks: ${n} ks ÷ 2 = ${b} ks`,
+    detMezisouc: 'Medzisúčet bonusu', detBonusMax: 'Bonusové akcie (max 80)',
+    detCena: 'Cena akcie', detHodnotaBonus: 'Hodnota bonusových akcií',
+    detHodnotaNak: (n) => `Hodnota nakúpených akcií (${n} ks)`,
+    detNeprijem: 'Nepeňažný príjem (hodnota bonusu)',
+    detZakladCZ: '',
+    detDan15: '',
+    detDan23: '',
+    detDanCelkem: 'Daň z príjmu celkom',
+    detOdvody11: '',
+    detOdvodyCelkem: 'Odvody celkom',
+    detTotal: 'Celkový dopad na mzdu',
+    detDanSK19: 'Daň 19 %',
+    detDanSK25: '',
+    detDanSKCelkem: 'Daň z príjmu celkom',
+    detOdvodySK: 'Odvody zamestnanca 14,4 % (ZP 5 % + SP 9,4 %)',
   }
 };
 
@@ -355,6 +391,9 @@ function setLang(l) {
   lang = l;
   document.getElementById('btn-cs').className = 'toggle-btn' + (l==='cs' ? ' active lang' : ' lang');
   document.getElementById('btn-en').className = 'toggle-btn' + (l==='en' ? ' active lang' : ' lang');
+  // Sync country to language if switching manually
+  if (l === 'sk' && country !== 'sk') { country = 'sk'; setCountry('sk'); return; }
+  if ((l === 'cs' || l === 'en') && country === 'sk') { country = 'cz'; setCountry('cz'); return; }
   applyTexts();
   document.getElementById('results').className = '';
 }
@@ -367,6 +406,9 @@ function setCountry(c) {
   document.getElementById('calc-btn').className = 'calc-btn' + (c==='sk' ? ' sk' : '');
   document.getElementById('unit-cena').textContent = c==='cz' ? 'CZK' : 'EUR';
   document.getElementById('results').className = '';
+  // Auto-switch language with country
+  if (c === 'sk' && lang === 'cs') setLang('sk');
+  if (c === 'cz' && lang === 'sk') setLang('cs');
 }
 
 function applyTexts() {
@@ -396,41 +438,26 @@ function computeBonus(n) {
   return Math.min(t1*2 + t2*1 + Math.floor(t3/2), 80);
 }
 
-// CZ: Tax on non-monetary income
-// Super-gross = hodnotaBonus * 1.338, rounded up to 100
-// Progressive: 15% up to 131 901 CZK/month super-gross, 23% above
-// Contributions: 11% of gross bonus value (health 4.5% + social 6.5%)
+// CZ 2026: Tax on non-monetary income
+// Superhrubá mzda zrušena od 2021 — základ daně = hrubá mzda (hodnota bonusu)
+// Progrese: 15 % do 146 901 Kč/měs (36 × prům. mzda 48 967 Kč / 12), 23 % nad tuto hranici
+// Odvody zaměstnanec: SP 7,1 % + ZP 4,5 % = 11,6 %
 function calcCZ(hodnotaBonus) {
-  const superHruba = Math.ceil(hodnotaBonus * 1.338 / 100) * 100;
-  const hraniceMes = 131901; // CZK monthly threshold for 23% (4× average wage 2023)
-  let dan = 0;
-  if (superHruba <= hraniceMes) {
-    dan = Math.round(superHruba * 0.15);
-  } else {
-    dan = Math.round(hraniceMes * 0.15 + (superHruba - hraniceMes) * 0.23);
-  }
-  const dan15 = Math.round(Math.min(superHruba, hraniceMes) * 0.15);
-  const dan23 = superHruba > hraniceMes ? Math.round((superHruba - hraniceMes) * 0.23) : 0;
-  const odvody = Math.round(hodnotaBonus * 0.11);
-  return { superHruba, dan15, dan23, dan, odvody, hraniceMes };
+  const hraniceMes = 146901; // 36 × 48 967 / 12, rok 2026
+  const dan15 = Math.round(Math.min(hodnotaBonus, hraniceMes) * 0.15);
+  const dan23 = hodnotaBonus > hraniceMes ? Math.round((hodnotaBonus - hraniceMes) * 0.23) : 0;
+  const dan = dan15 + dan23;
+  const odvody = Math.round(hodnotaBonus * 0.116);
+  return { superHruba: hodnotaBonus, dan15, dan23, dan, odvody, hraniceMes };
 }
 
 // SK: Tax on non-monetary income
-// Základ = hodnotaBonus (nepeňažný príjem sa pripočítava k základu)
-// Progressive: 19% up to 3 212.75 EUR/month, 25% above
-// Contributions: 13.4% (health 4% + social 9.4%)
+// Flat 19%, SP 9.4%, ZP 5% = 14.4% total contributions
 function calcSK(hodnotaBonus) {
-  const hranica = 3212.75;
-  let dan19 = 0, dan25 = 0;
-  if (hodnotaBonus <= hranica) {
-    dan19 = Math.round(hodnotaBonus * 0.19);
-  } else {
-    dan19 = Math.round(hranica * 0.19);
-    dan25 = Math.round((hodnotaBonus - hranica) * 0.25);
-  }
-  const dan = dan19 + dan25;
-  const odvody = Math.round(hodnotaBonus * 0.134);
-  return { dan19, dan25, dan, odvody, hranica };
+  const dan19 = Math.round(hodnotaBonus * 0.19);
+  const dan = dan19;
+  const odvody = Math.round(hodnotaBonus * 0.144);
+  return { dan19, dan25: 0, dan, odvody, hranica: null };
 }
 
 function validate() {
@@ -497,7 +524,7 @@ function calculate() {
   if (c === 'cz') {
     danSection = `
       ${row(t('detNeprijem'), f(hodnotaBonus))}
-      ${row(t('detZakladCZ'), f(superHruba))}
+      ${row(t('detZakladCZ'), f(hodnotaBonus))}
       ${row(t('detDan15'), f(dan15))}
       ${dan23 > 0 ? row(t('detDan23'), f(dan23)) : ''}
       <div class="detail-row subtotal"><span class="detail-row-label">${t('detDanCelkem')}</span><span class="detail-row-value">${f(dan)}</span></div>
